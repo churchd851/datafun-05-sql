@@ -42,6 +42,7 @@ Sample datasets are provided in the `data/raw` folder
 across several topic domains:
 
 - **retail** - with regions / stores / employees (the worked example)
+- Added sales within retail. Created a new table to store sales data. 
 - **library** - with state / branch / books
 - **health** - with clinic / patient / visit
 - **movies** - using the **MovieLens** small dataset
