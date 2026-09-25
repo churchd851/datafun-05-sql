@@ -143,17 +143,17 @@ CUSTOM_SQL_QUERY: Final[str] = """
 SELECT
     r.region_name,
     s.store_name,
-    COUNT(e.employee_id) AS employee_count
+    SUM(sale.sale_amount) AS total_sales
 FROM regions AS r
 JOIN stores AS s
     ON r.region_id = s.region_id
-LEFT JOIN employees AS e
-    ON s.store_id = e.store_id
+LEFT JOIN sales AS sale
+    ON s.store_id = sale.store_id
 GROUP BY
     r.region_name,
     s.store_name
 ORDER BY
-    employee_count DESC;
+    total_sales DESC;
 """
 
 # === CHOOSE A VISUALIZATION ===
@@ -173,13 +173,7 @@ plot.box() method for creating box plots.
 
 
 def main() -> None:
-    """Entry point when running this file as a Python script.
-
-    This is where the instructions begin.
-
-    Arguments: None.
-    Returns: None.
-    """
+    """Entry point when running this file as a Python script."""
     log_header(LOG, "P05 - PYTHON AND SQL")
 
     LOG.info("===================================")
@@ -193,10 +187,12 @@ def main() -> None:
     log_path(LOG, "regions file", path=REGION_FILE)
     log_path(LOG, "stores file", path=STORE_FILE)
     log_path(LOG, "employees file", path=EMPLOYEE_FILE)
+    log_path(LOG, "sales file", path=SALE_FILE)
 
     regions_df: pd.DataFrame = pd.read_csv(REGION_FILE)
     stores_df: pd.DataFrame = pd.read_csv(STORE_FILE)
     employees_df: pd.DataFrame = pd.read_csv(EMPLOYEE_FILE)
+    sales_df: pd.DataFrame = pd.read_csv(SALE_FILE)
 
     LOG.info("Related tables loaded successfully.")
 
@@ -207,10 +203,12 @@ def main() -> None:
     LOG.info(f"Regions grain: {REGION_GRAIN}")
     LOG.info(f"Stores grain: {STORE_GRAIN}")
     LOG.info(f"Employees grain: {EMPLOYEE_GRAIN}")
+    LOG.info(f"Sales grain: {SALE_GRAIN}")
 
     LOG.info(f"Regions columns: {regions_df.columns.tolist()}")
     LOG.info(f"Stores columns: {stores_df.columns.tolist()}")
     LOG.info(f"Employees columns: {employees_df.columns.tolist()}")
+    LOG.info(f"Sales columns: {sales_df.columns.tolist()}")
 
     LOG.info(RELATIONSHIP_DECISION)
 
@@ -228,26 +226,16 @@ def main() -> None:
     LOG.info("04. LOAD the tables into SQLite.")
     LOG.info("-------------------------------")
 
-    regions_df.to_sql(
-        "regions",
-        connection,
-        if_exists="replace",
-        index=False,
-    )
+    regions_df.to_sql("regions", connection, if_exists="replace", index=False)
+    stores_df.to_sql("stores", connection, if_exists="replace", index=False)
+    employees_df.to_sql("employees", connection, if_exists="replace", index=False)
 
-    stores_df.to_sql(
-        "stores",
-        connection,
-        if_exists="replace",
-        index=False,
+    # Ensure sale_amount is numeric
+    sales_df["sale_amount"] = pd.to_numeric(
+        sales_df["sale_amount"].astype(str).str.replace(r"[,$]", "", regex=True),
+        errors="coerce",
     )
-
-    employees_df.to_sql(
-        "employees",
-        connection,
-        if_exists="replace",
-        index=False,
-    )
+    sales_df.to_sql("sales", connection, if_exists="replace", index=False)
 
     LOG.info("Related tables loaded into SQLite.")
 
@@ -271,23 +259,19 @@ def main() -> None:
 
     LOG.info(CUSTOM_CHART_DECISION)
 
-    employee_ax = result_df.plot.bar(
+    sales_ax = result_df.plot.bar(
         x="store_name",
-        y="employee_count",
+        y="total_sales",
         legend=False,
     )
 
-    # CUSTOM: The analyst can customize the returned Matplotlib Axes object.
-    employee_ax.set_title("Employees by Store")
-    employee_ax.set_xlabel("Store")
-    employee_ax.set_ylabel("Number of Employees")
+    sales_ax.set_title("Total Sales by Store")
+    sales_ax.set_xlabel("Store")
+    sales_ax.set_ylabel("Total Sales ($)")
 
     CHART_DIR.mkdir(parents=True, exist_ok=True)
 
-    save_chart(
-        employee_ax,
-        CHART_PATH,
-    )
+    save_chart(sales_ax, CHART_PATH)
 
     LOG.info(f"Chart saved successfully at {CHART_PATH}.")
 
@@ -295,14 +279,9 @@ def main() -> None:
     LOG.info("07. SUMMARIZE what you found.")
     LOG.info("-------------------------------")
 
-    # Run this app first.
-    # Review the SQL result and visualization.
-    # Then record your CUSTOM observations
-    # in a simple multi-line raw string.
-
     LOG.info(r"""CUSTOM OBSERVATIONS:
     The SQL query connected information from
-    the regions, stores, and employees tables.
+    the regions, stores, and sales tables.
 
     The result has one row per store.
 
@@ -315,11 +294,7 @@ def main() -> None:
     LOG.info("08. DISPLAY the visualization.")
     LOG.info("-------------------------------")
 
-    LOG.info("In a script, call plt.show() at the end to display all charts.")
-    LOG.info("Close all chart windows (with the close button) to continue.")
-
     plt.show()
-
     connection.close()
 
     LOG.info("===================================")

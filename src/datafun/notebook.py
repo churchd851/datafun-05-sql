@@ -207,29 +207,23 @@ def _choose_region(regions_df):
 
 @app.cell
 def _run_query(connection, region_dropdown):
-    # === RUN A PARAMETERIZED SQL QUERY ===
-
     sql_query = """
     SELECT
         r.region_name,
         s.store_name,
-        COUNT(e.employee_id) AS employee_count
+        SUM(sale.sale_amount) AS total_sales
     FROM regions AS r
     JOIN stores AS s
         ON r.region_id = s.region_id
-    LEFT JOIN employees AS e
-        ON s.store_id = e.store_id
+    LEFT JOIN sales AS sale
+        ON s.store_id = sale.store_id
     WHERE r.region_name = ?
     GROUP BY
         r.region_name,
         s.store_name
     ORDER BY
-        employee_count DESC;
+        total_sales DESC;
     """
-
-    # The question mark is a placeholder.
-    # The selected region is passed separately
-    # to SQLite as a bound parameter.
 
     result_df = pd.read_sql_query(
         sql_query,
@@ -237,17 +231,14 @@ def _run_query(connection, region_dropdown):
         params=[region_dropdown.value],
     )
 
-    # Return the result dataframe and the SQL query for inspection.
     return result_df, sql_query
 
 
 @app.cell
 def _show_selection(region_dropdown):
-    # === USE MARKDOWN TO SHOW THE CURRENT ANALYTICAL CHOICE ===
-
     mo.md(
         f"""
-        ## Employees by Store
+        ## Sales by Store
 
         Selected region: **{region_dropdown.value}**
         (passed to SQL as a bound parameter).
@@ -257,30 +248,23 @@ def _show_selection(region_dropdown):
 
 @app.cell
 def _show_df_table_and_chart(region_dropdown, result_df):
-    # === DISPLAY THE SQL QUERY RESULT ===
-
-    # Display the result dataframe and chart
-    # side by side (in a horizontal hstack).
-
-    employee_chart = (
+    sales_chart = (
         alt.Chart(result_df)
         .mark_bar()
         .encode(  # ty: ignore[unresolved-attribute]
             x=alt.X("store_name:N", title="Store", sort="-y"),
-            y=alt.Y("employee_count:Q", title="Number of Employees"),
+            y=alt.Y("total_sales:Q", title="Total Sales ($)"),
         )
         .properties(
-            title=f"Employees by Store - {region_dropdown.value}",
+            title=f"Sales by Store - {region_dropdown.value}",
             width="container",
         )
     )
 
-    # Display vertical (stacked) layout of a list of items.
-    # first the df table, then the chart.
     mo.vstack(
         [
             result_df,
-            employee_chart,
+            sales_chart,
         ]
     )
 

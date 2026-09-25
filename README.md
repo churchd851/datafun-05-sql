@@ -48,9 +48,7 @@ across several topic domains:
 - **movies** - using the **MovieLens** small dataset
 
 Each domain has related tables.
-Run the retail example,
-and implement a similar project either by expanding the retail work,
-or choosing one of the other recommended domains.
+Project was updated to run and create a table that showcases the amount of sales for each store instead of the initial table that showcased the number of employees per store. If both tables were kepy and compared side by side students could be asked to compare and see if the number of sales is higher at stores with more employees and why that might be. 
 
 ## Produced Artifacts
 
