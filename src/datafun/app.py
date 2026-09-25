@@ -90,6 +90,7 @@ DATA_DIR: Final[Path] = Path("data") / "retail"
 REGION_FILE: Final[Path] = DATA_DIR / "region.csv"
 STORE_FILE: Final[Path] = DATA_DIR / "store.csv"
 EMPLOYEE_FILE: Final[Path] = DATA_DIR / "employee.csv"
+SALE_FILE: Final[Path] = DATA_DIR / "sale.csv"
 
 # === LOCATE THE SQLITE DATABASE ===
 
@@ -105,6 +106,7 @@ CHART_PATH: Final[Path] = CHART_DIR / "first-chart.png"
 REGION_GRAIN: Final[str] = "one business region"
 STORE_GRAIN: Final[str] = "one store"
 EMPLOYEE_GRAIN: Final[str] = "one employee"
+SALE_GRAIN: Final[str] = "one sale transaction"
 
 # === DESCRIBE THE TABLE RELATIONSHIPS ===
 
@@ -116,6 +118,9 @@ The stores table uses region_id to identify each store's region.
 
 One store can have many employees.
 The employees table uses store_id to identify each employee's store.
+
+One store can have many sales.
+The sales table uses store_id to identify which store each sale belongs to.
 
 The shared keys connect information stored in different tables.
 """

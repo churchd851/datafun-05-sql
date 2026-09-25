@@ -8,8 +8,8 @@
 # ///
 """src/datafun/notebook.py - Reactive SQL explorer.
 
-Author: Denise Case
-Date: 2026-08
+Author: Delma Church
+Date: 2026-09
 
 REQUIREMENTS:
 
@@ -103,6 +103,7 @@ with app.setup:
     REGION_FILENAME = "region.csv"
     STORE_FILENAME = "store.csv"
     EMPLOYEE_FILENAME = "employee.csv"
+    SALE_FILENAME = "sale.csv"
 
     def load_csv_for_notebook(
         *,
@@ -163,45 +164,25 @@ def _load_data():
         local_path=DATA_DIR / EMPLOYEE_FILENAME,
         public_path=PUBLIC_DIR / EMPLOYEE_FILENAME,
     )
+    sales_df = load_csv_for_notebook(
+        local_path=DATA_DIR / SALE_FILENAME,
+        public_path=PUBLIC_DIR / SALE_FILENAME,
+    )
 
     # Return the dataframes in the order expected by the next cell.
-    return employees_df, regions_df, stores_df
+    return employees_df, regions_df, sales_df, stores_df
 
 
 @app.cell
-def _create_database(employees_df, regions_df, stores_df):
-    # === CREATE AN IN-MEMORY SQLITE DATABASE ===
-
+def _create_database(employees_df, regions_df, sales_df, stores_df):
     connection = sqlite3.connect(":memory:")
 
-    regions_df.to_sql(
-        "regions",
-        connection,
-        if_exists="replace",
-        index=False,
-    )
-
-    stores_df.to_sql(
-        "stores",
-        connection,
-        if_exists="replace",
-        index=False,
-    )
-
-    employees_df.to_sql(
-        "employees",
-        connection,
-        if_exists="replace",
-        index=False,
-    )
-
-    # Last value returned is the number of records in the last table.
-    # Instead, show a message using mo.md() in Markdown for this cell.
+    regions_df.to_sql("regions", connection, if_exists="replace", index=False)
+    stores_df.to_sql("stores", connection, if_exists="replace", index=False)
+    employees_df.to_sql("employees", connection, if_exists="replace", index=False)
+    sales_df.to_sql("sales", connection, if_exists="replace", index=False)
 
     mo.md("Database connected and tables loaded.")
-
-    # Return the connection as a one-element tuple
-    # to make it available to other cells.
     return (connection,)
 
 
